@@ -1,0 +1,24 @@
+{{define "sidebar"}}
+<aside
+	class="sticky top-0 border border-r-solid border-slate-900 overflow-y-auto bg-slate-950 h-screen flex flex-col gap-4">
+	<h2 class="text-sm font-medium text-slate-50 border border-b-solid border-slate-900 h-12 flex items-center px-4">
+		Endpoints</h2>
+	{{range $tag := .Tags}}
+	<details class="pb-2" open>
+		<summary class="flex justify-between px-4 mb-2 text-sm font-medium text-slate-50 cursor-pointer">
+			{{$tag.Name}}</summary>
+		<ul class="list-none px-2">
+			{{range $endpoint := $tag.Endpoints}}
+			<li class="mb-1">
+				<a class="flex items-center justify-between text-slate-50 p-2 rounded-md transition-all hover:bg-slate-900 no-underline"
+					href="#{{$endpoint.Summary}}">
+					<p class="text-sm text-slate-400">{{$endpoint.Summary}}</p>
+					<span class="text-sm font-medium" data-method="{{$endpoint.Method}}">{{$endpoint.Method}}</span>
+				</a>
+			</li>
+			{{end}}
+		</ul>
+	</details>
+	{{end}}
+</aside>
+{{end}}

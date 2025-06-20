@@ -1,0 +1,146 @@
+{{define "body"}}
+<main class="scroll-smooth snap-y snap-mandatory scroll-p-16 overflow-y-auto h-screen">
+	<header
+		class="sticky top-0 flex items-center justify-between border border-b-solid border-slate-900 px-4 h-12 bg-slate-950 z-10">
+		<p class="text-sm font-medium">API Documentation</p>
+	</header>
+
+	<section class="flex flex-col gap-2 p-4 border border-b-solid border-slate-900">
+		<span class="bg-cyan-800 text-slate-50 rounded-md py-1 px-2 w-fit text-sm font-medium">{{.Info.Version}}</span>
+		<h1 class="text-2xl font-semibold">{{.Info.Title}}</h1>
+		<p class="text-slate-400 max-w-prose">{{.Info.Description}}</p>
+	</section>
+
+	<section class="p-4 flex flex-col gap-6">
+		{{range $tag := .Tags}}
+		<article class="flex flex-col gap-4">
+			<h2 class="text-lg font-medium text-slate-50">{{$tag.Name}}</h2>
+			{{range $endpoint := $tag.Endpoints}}
+			<details id="{{$endpoint.Summary}}" class="bg-slate-900 rounded-md p-4 flex flex-col">
+				<summary
+					class="flex items-center justify-between gap-2 text-sm font-medium text-slate-50 transition-all select-none">
+					<div class="flex items-center gap-2">
+						<span data-method="{{$endpoint.Method}}">{{$endpoint.Method}}</span>
+						<code data-deprecated="{{$endpoint.Deprecated}}">{{$endpoint.Path}}</code>
+						<h3 class="text-sm font-medium text-slate-400">{{$endpoint.Summary}}</h3>
+					</div>
+				</summary>
+				<div class="flex flex-col gap-4 mt-4">
+					{{if $endpoint.Query}}
+					<details class="flex flex-col gap-4 rounded-md p-4 bg-slate-800/50">
+						<summary class="flex items-center justify-between">
+							<h4 class="text-base text-slate-50 font-medium">Query Parameters</h4>
+						</summary>
+						<div class="flex flex-col gap-4 mt-4">
+							{{range $param := $endpoint.Query}}
+							<div class="flex flex-col gap-2">
+								<div class="flex items-center gap-2 text-sm font-mono">
+									<p class="py-1 px-2 bg-slate-700 rounded-md">
+										{{$param.Name}}</p>
+									<p class="text-slate-50">{{$param.Type}}</p>
+									{{if $param.Validation.Required}}
+									<p class="text-rose-600">required</p>
+									{{end}}
+								</div>
+								{{if $param.Description}}
+								<p class="text-base text-slate-400">{{$param.Description}}</p>
+								{{end}}
+							</div>
+							<hr class="border-none h-px bg-slate-700 opacity-50 last:hidden">
+							{{end}}
+						</div>
+					</details>
+					{{end}}
+					{{if $endpoint.Form}}
+					<details class="flex flex-col gap-4 rounded-md p-4 bg-slate-800/50">
+						<summary class="flex items-center justify-between">
+							<h4 class="text-base text-slate-50 font-medium">Form Data</h4>
+						</summary>
+						<div class="flex flex-col gap-4 mt-4">
+							{{range $form := $endpoint.Form}}
+							<div class="flex flex-col gap-2">
+								<div class="flex items-center gap-2 text-sm font-mono">
+									<p class="py-1 px-2 bg-slate-700 rounded-md">
+										{{$form.Name}}</p>
+									<p class="text-slate-50">{{$form.Type}}</p>
+									{{if $form.Required}}
+									<p class="text-rose-600">required</p>
+									{{end}}
+								</div>
+								{{if $form.Description}}
+								<p class="text-base text-slate-400">{{$form.Description}}</p>
+								{{end}}
+							</div>
+							<hr class="border-none h-px bg-slate-700 opacity-50 last:hidden">
+							{{end}}
+						</div>
+					</details>
+					{{end}}
+					{{if $endpoint.Body}}
+					<details class="flex flex-col gap-4 rounded-md p-4 bg-slate-800/50">
+						<summary class="flex items-center justify-between">
+							<h4 class="text-base text-slate-50 font-medium">Body</h4>
+						</summary>
+						<div class="flex flex-col lg:flex-row gap-4 mt-4">
+							<div class="flex flex-col gap-4 lg:w-1/2">
+								{{range $body := $endpoint.Body}}
+								<div class="flex flex-col gap-2">
+									<div class="flex items-center gap-2 text-sm font-mono">
+										<p class="py-1 px-2 bg-slate-700 rounded-md">
+											{{$body.Name}}</p>
+										<p class="text-slate-50">{{$body.Type}}</p>
+										{{if $body.Required}}
+										<p class="text-rose-500">required</p>
+										{{end}}
+									</div>
+									{{if ne (len $body.Validation) 0}}
+									<div class="flex items-center gap-2">
+										{{range $rule, $value := $body.Validation}}
+										<p class="text-sm text-slate-400 font-mono">{{$rule}}: {{$value}}</p>
+										<p class="last:hidden text-slate-400"> - </p>
+										{{end}}
+									</div>
+									{{end}}
+									{{if $body.Description}}
+									<p class="text-base text-slate-400">{{$body.Description}}</p>
+									{{end}}
+									{{ if ne (len $body.Fields) 0 }}
+									<div class="flex flex-col gap-4 px-4 mt-2">
+										{{range $field := $body.Fields}}
+										<div class="flex items-center gap-2 text-sm font-mono">
+											<p class="py-1 px-2 bg-slate-700 rounded-md">
+												{{$field.Name}}</p>
+											<p class="text-slate-50">{{$field.Type}}</p>
+											{{if $field.Required}}
+											<p class="text-rose-500">required</p>
+											{{end}}
+										</div>
+										{{if ne (len $body.Validation) 0}}
+										<div class="flex items-center gap-2">
+											{{range $rule, $value := $field.Validation}}
+											<p>{{$rule}}={{$value}}</p>
+											{{end}}
+										</div>
+										{{end}}
+										{{if $field.Description}}
+										<p class="text-base text-slate-400">{{$field.Description}}</p>
+										{{end}}
+										{{end}}
+									</div>
+									{{end}}
+								</div>
+								<hr class="border-none h-px bg-slate-700 opacity-50 last:hidden">
+								{{end}}
+							</div>
+							<pre class="p-4 rounded-md bg-slate-900 h-fit w-1/2 text-slate-400">code</pre>
+						</div>
+					</details>
+					{{end}}
+				</div>
+			</details>
+			{{end}}
+		</article>
+		{{end}}
+	</section>
+</main>
+{{end}}

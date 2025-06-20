@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="https://cdn.jsdelivr.net/npm/@unocss/runtime"></script>
+	<title>{{.Info.Title}} - API Documentation</title>
+</head>
+<body class="relative bg-slate-800 text-slate-50 font-sans min-h-screen grid grid-cols-[300px_1fr] items-start">
+	{{template "sidebar" .}}
+	{{template "body" .}}
+</body>
+<style>
+	:root {
+		--sidebar-width: 300px;
+		--topbar-height: 50px;
+		--font-xl: 1.5rem;
+		--font-lg: 1.25rem;
+		--font-base: 1rem;
+		--font-md: 0.875rem;
+		--font-sm: 0.5rem;
+		--radius-sm: 0.25rem;
+		--radius-md: 0.375rem;
+		--radius-lg: 0.5rem;
+		--spacing-sm: 0.25rem;
+		--spacing-md: 0.5rem;
+		--spacing-lg: 1rem;
+		--spacing-xl: 2rem;
+		--spacing-2xl: 3rem;
+		--background: hsl(210, 100%, 98%);
+		--foreground: hsl(220, 20%, 20%);
+		--muted: hsl(215, 25%, 60%);
+		--surface: hsl(210, 100%, 95%);
+		--accent: hsl(220, 90%, 55%);
+		--secondary: hsl(200, 80%, 60%);
+		--get-color: hsl(150, 60%, 65%);
+		--post-color: hsl(220, 60%, 70%);
+		--put-color: hsl(40, 80%, 70%);
+		--patch-color: hsl(270, 50%, 70%);
+		--delete-color: hsl(0, 70%, 70%);
+		--head-color: hsl(300, 50%, 70%);
+		--options-color: hsl(30, 60%, 70%);
+	}
+	@media (prefers-color-scheme: dark) {
+		:root {
+			--background: hsl(220, 50%, 6%);
+			--foreground: hsl(208, 85%, 95%);
+			--muted: hsl(215, 20%, 50%);
+			--surface: hsl(220, 50%, 10%);
+			--accent: hsl(220, 90%, 60%);
+			--secondary: hsl(200, 80%, 50%);
+		}
+	}
+	* {
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+	}
+	summary::-webkit-details-marker {
+		display: none;
+	}
+	summary::after {
+		color: var(--muted);
+		content: '+';
+		font-weight: 400;
+	}
+	details[open] > summary::after {
+		content: '-';
+	}
+	[data-method="GET"] {
+		color: var(--get-color);
+	}
+	[data-method="POST"] {
+		color: var(--post-color);
+	}
+	[data-method="PUT"] {
+		color: var(--put-color);
+	}
+	[data-method="PATCH"] {
+		color: var(--patch-color);
+	}
+	[data-method="DELETE"] {
+		color: var(--delete-color);
+	}
+	[data-method="HEAD"] {
+		color: var(--head-color);
+	}
+	[data-method="OPTIONS"] {
+		color: var(--options-color);
+	}
+	[data-deprecated="true"] {
+		text-decoration: line-through wavy var(--delete-color);
+	}
+	.security-badge {
+		font-size: 0.75rem;
+		padding: 0.125rem 0.375rem;
+		border-radius: 0.25rem;
+		background: var(--accent);
+		color: white;
+		font-weight: 500;
+	}
+	.response-status {
+		padding: 0.25rem 0.5rem;
+		border-radius: 0.25rem;
+		font-size: 0.75rem;
+		font-weight: 600;
+		font-family: monospace;
+	}
+	.response-status[data-status^="2"] {
+		background: hsl(120, 50%, 25%);
+		color: hsl(120, 60%, 70%);
+	}
+	.response-status[data-status^="3"] {
+		background: hsl(200, 50%, 25%);
+		color: hsl(200, 60%, 70%);
+	}
+	.response-status[data-status^="4"] {
+		background: hsl(40, 50%, 25%);
+		color: hsl(40, 70%, 70%);
+	}
+	.response-status[data-status^="5"] {
+		background: hsl(0, 50%, 25%);
+		color: hsl(0, 70%, 70%);
+	}
+</style>
+</html>

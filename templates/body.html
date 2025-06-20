@@ -1,0 +1,404 @@
+{{define "body"}}
+<main class="scroll-smooth snap-y snap-mandatory scroll-p-16 overflow-y-auto h-screen">
+	<header class="sticky top-0 flex items-center justify-between border border-b-solid border-slate-600/50 px-4 h-12 bg-slate-800 z-10">
+		<p class="text-sm font-medium">API Documentation</p>
+	</header>
+	
+	<section class="flex flex-col gap-2 p-4 border border-b-solid border-slate-600/50">
+		<div class="flex items-center gap-2 flex-wrap">
+			<span class="bg-cyan-800 text-slate-50 rounded-md py-1 px-2 w-fit text-xs font-medium">{{.Info.Version}}</span>
+			{{if .Info.License.Name}}
+			<span class="bg-slate-700 text-slate-300 rounded-md py-1 px-2 w-fit text-xs font-medium">{{.Info.License.Name}}</span>
+			{{end}}
+		</div>
+		<h1 class="text-2xl font-semibold">{{.Info.Title}}</h1>
+		{{if .CreatedAt}}
+		<p class="text-xs text-slate-400">Updated: {{.CreatedAt.Format "2006-01-02 15:04"}}</p>
+		{{end}}
+		{{if .Info.Description}}
+		<p class="text-slate-300 max-w-prose">{{.Info.Description}}</p>
+		{{end}}
+		
+		<!-- Contact Information -->
+		{{if or .Info.Contact.Name .Info.Contact.Email .Info.Contact.URL}}
+		<div class="mt-2 text-sm">
+			{{if .Info.Contact.Name}}
+			<p class="text-slate-400">Contact: {{.Info.Contact.Name}}</p>
+			{{end}}
+			{{if .Info.Contact.Email}}
+			<p class="text-slate-400">Email: <a href="mailto:{{.Info.Contact.Email}}" class="text-cyan-400 hover:text-cyan-300 decoration-none hover:underline">{{.Info.Contact.Email}}</a></p>
+			{{end}}
+			{{if .Info.Contact.URL}}
+			<p class="text-slate-400">Website: <a href="{{.Info.Contact.URL}}" class="text-cyan-400 hover:text-cyan-300 decoration-none hover:underline" target="_blank">{{.Info.Contact.URL}}</a></p>
+			{{end}}
+		</div>
+		{{end}}
+		
+		{{if .Info.TermsOfService}}
+		<p class="text-xs text-slate-400">
+			<a href="{{.Info.TermsOfService}}" class="text-cyan-400 hover:text-cyan-300 decoration-none hover:underline" target="_blank">Terms of Service</a>
+		</p>
+		{{end}}
+	</section>
+
+	{{ if .Security}}
+	<section class="flex flex-col gap-4 p-4 border border-b-solid border-slate-600/50">
+		<div class="flex flex-col gap-0.5">
+			<h2 class="text-lg font-medium text-slate-50">Authentication</h2>
+			<p class="text-sm text-slate-400">Security schemas used in API endpoint</p>
+		</div>
+		<div class="space-y-4">
+		{{range $security := .Security}}
+			{{if eq $security.Type "basic"}}
+				<div class="flex flex-col gap-2">
+					<div class="flex items-center gap-1">
+						<span class="bg-cyan-800 text-slate-50 rounded-md py-1 px-2 w-fit text-xs font-medium">Basic</span>
+						<span class="text-sm font-medium text-slate-400">Basic Authentication</span>
+					</div>
+					<p class="text-slate-300 w-prose">The client sends HTTP requests with the Authorization header that contains the word Basic followed by a space and a base64-encoded string username:password. For example, to authorize as demo / p@55w0rd the client would send</p>
+					<pre class="p-4 rounded-md bg-slate-900 h-fit text-slate-400 text-sm overflow-x-auto">Authorization: Basic ZGVtbzpwQDU1dzByZA==</pre>
+				</div>
+			{{else if eq $security.Type "bearer"}}
+				<div class="flex flex-col gap-2">
+					<div class="flex items-center gap-1">
+						<span class="bg-cyan-800 text-slate-50 rounded-md py-1 px-2 w-fit text-xs font-medium">Bearer</span>
+						<span class="text-sm font-medium text-slate-400">Bearer Authentication</span>
+					</div>
+					<p class="text-slate-300 w-prose">The client must send this token in the Authorization header when making requests to protected resources:</p>
+					<pre class="p-4 rounded-md bg-slate-900 h-fit text-slate-400 text-sm overflow-x-auto">Authorization: Bearer {{"<token>"}}</pre>
+				</div>
+			{{else if eq $security.Type "apiKey"}}
+				<div class="flex flex-col gap-2">
+					<div class="flex items-center gap-1">
+						<span class="bg-cyan-800 text-slate-50 rounded-md py-1 px-2 w-fit text-xs font-medium">Api key</span>
+						<span class="text-sm font-medium text-slate-400">Api Keys</span>
+					</div>
+					<p class="text-slate-300 w-prose">The client must send this token in the Authorization header when making requests to protected resources:</p>
+					{{ if eq $security.In "query"}}
+					<pre class="p-4 rounded-md bg-slate-900 h-fit text-slate-400 text-sm overflow-x-auto">GET /something?api_key=abcdef12345</pre>
+					{{else if eq $security.In "header"}}
+					<pre class="p-4 rounded-md bg-slate-900 h-fit text-slate-400 text-sm overflow-x-auto">GET /something HTTP/1.1
+{{$security.KeyName}}: abcdef12345</pre>
+					{{else if eq $security.In "cookie"}}
+					<pre class="p-4 rounded-md bg-slate-900 h-fit text-slate-400 text-sm overflow-x-auto">GET /something HTTP/1.1
+Cookie: {{$security.KeyName}}=abcdef12345</pre>
+					{{end}}
+				</div>
+			{{end}}
+			<hr class="border-none h-px bg-slate-700 opacity-50 last:hidden">
+		{{end}}
+		</div>
+	</section>
+	{{end}}
+
+	
+	<section class="p-4 flex flex-col gap-6">
+		{{range $tag := .Tags}}
+		<article class="flex flex-col gap-4">
+			<div class="flex flex-col gap-0.5">
+				<h2 class="text-lg font-medium text-slate-50">{{$tag.Name}}</h2>
+				{{if $tag.Description}}
+				<p class="text-sm text-slate-400">{{$tag.Description}}</p>
+				{{end}}
+			</div>
+			
+			{{range $endpoint := $tag.Endpoints}}
+			<details id="{{$endpoint.OperationID}}{{if not $endpoint.OperationID}}{{$endpoint.Summary}}{{end}}" class="bg-slate-900/50 rounded-md p-4 flex flex-col">
+				<summary class="flex items-center justify-between gap-2 text-sm font-medium text-slate-50 transition-all select-none">
+					<div class="flex items-center gap-2 flex-1 min-w-0">
+						<span data-method="{{$endpoint.Method}}" class="font-mono text-sm">{{$endpoint.Method}}</span>
+						<code data-deprecated="{{$endpoint.Deprecated}}" class="text-slate-50">{{$endpoint.Path}}</code>
+						<h3 class="text-sm font-medium text-slate-400 truncate">{{$endpoint.Summary}}</h3>
+						{{if $endpoint.Deprecated}}
+						<span class="text-sm font-mono text-red-300">DEPRECATED</span>
+						{{end}}
+					</div>
+				</summary>
+				
+				<div class="flex flex-col gap-4 mt-2">
+					{{if $endpoint.Description}}
+					<div class="text-sm text-slate-300">
+						<p>{{$endpoint.Description}}</p>
+					</div>
+					{{end}}
+					
+					<!-- Security Requirements -->
+					{{if $endpoint.Security}}
+					<div class="flex flex-col gap-1">
+						<p class="text-xs text-slate-400">Authentication</p>
+						{{range $securityName := $endpoint.Security}}
+						<span class="bg-cyan-800 text-slate-50 rounded-md py-1 px-2 w-fit text-xs font-medium">{{$securityName}}</span>
+						{{end}}
+					</div>
+					<!-- <div class="flex flex-col gap-2 rounded-md p-3 bg-slate-800/50"> -->
+					<!-- 	<h4 class="text-sm font-medium text-slate-50">Authentication</h4> -->
+					<!-- 	<div class="flex flex-wrap gap-2"> -->
+					<!-- 		{{range $securityName := $endpoint.Security}} -->
+					<!-- 		<span class="security-badge">{{$securityName}}</span> -->
+					<!-- 		{{end}} -->
+					<!-- 	</div> -->
+					<!-- </div> -->
+					{{end}}
+					
+					<!-- Query Parameters -->
+					{{if $endpoint.Query}}
+					<details class="flex flex-col open:gap-4 rounded-md p-4 bg-slate-800/50">
+						<summary class="flex items-center justify-between">
+							<h4 class="text-base text-slate-50 font-medium">Query Parameters</h4>
+						</summary>
+						<div class="flex flex-col gap-4 font-mono">
+							{{range $param := $endpoint.Query}}
+							<div class="flex flex-col gap-2">
+								<div class="flex items-center gap-2 text-sm font-mono flex-wrap">
+									<p class="py-1 px-2 bg-slate-700 rounded-md">{{$param.Name}}</p>
+									<p class="text-slate-50">{{$param.Type}}</p>
+									{{if $param.Validation.Required}}
+									<p class="text-rose-600">required</p>
+									{{end}}
+									{{if $param.Validation.Default}}
+									<p class="text-slate-400">default: {{$param.Validation.Default}}</p>
+									{{end}}
+								</div>
+								{{if $param.Description}}
+								<p class="text-sm text-slate-400 font-sans">{{$param.Description}}</p>
+								{{end}}
+								{{if $param.Example}}
+								<div class="text-xs">
+									<span class="text-slate-500">Example: </span>
+									<code class="text-cyan-400">{{$param.Example}}</code>
+								</div>
+								{{end}}
+								{{if $param.Enum}}
+								<div class="text-xs">
+									<span class="text-slate-500">Allowed values: </span>
+									<span class="text-cyan-400">
+									{{range $i, $val := $param.Enum}}{{if $i}}, {{end}}<code>{{$val}}</code>{{end}}
+									</span>
+								</div>
+								{{end}}
+								{{if or $param.Validation.Min $param.Validation.Max $param.Validation.MinLen $param.Validation.MaxLen $param.Validation.Pattern}}
+								<div class="text-xs text-slate-500">
+									{{if $param.Validation.Min}}Min: {{$param.Validation.Min}} {{end}}
+									{{if $param.Validation.Max}}Max: {{$param.Validation.Max}} {{end}}
+									{{if $param.Validation.MinLen}}Min Length: {{$param.Validation.MinLen}} {{end}}
+									{{if $param.Validation.MaxLen}}Max Length: {{$param.Validation.MaxLen}} {{end}}
+									{{if $param.Validation.Pattern}}Pattern: <code>{{$param.Validation.Pattern}}</code>{{end}}
+								</div>
+								{{end}}
+							</div>
+							<hr class="border-none h-px bg-slate-700 opacity-50 last:hidden">
+							{{end}}
+						</div>
+					</details>
+					{{end}}
+					
+					<!-- Headers -->
+					{{if $endpoint.Headers}}
+					<details class="flex flex-col open:gap-4 rounded-md p-4 bg-slate-800/50">
+						<summary class="flex items-center justify-between">
+							<h4 class="text-base text-slate-50 font-medium">Headers</h4>
+						</summary>
+						<div class="flex flex-col gap-4">
+							{{range $header := $endpoint.Headers}}
+							<div class="flex flex-col gap-2">
+								<div class="flex items-center gap-2 text-sm font-mono">
+									<p class="py-1 px-2 bg-slate-700 rounded-md">{{$header.Name}}</p>
+									<p class="text-slate-50">{{$header.Type}}</p>
+									{{if $header.Required}}
+									<p class="text-rose-600">required</p>
+									{{end}}
+								</div>
+								{{if $header.Description}}
+								<p class="text-sm text-slate-400">{{$header.Description}}</p>
+								{{end}}
+								{{if $header.Example}}
+								<div class="text-xs font-mono">
+									<span class="text-slate-500">Example: </span>
+									<code class="text-cyan-400">{{$header.Example}}</code>
+								</div>
+								{{end}}
+							</div>
+							<hr class="border-none h-px bg-slate-700 opacity-50 last:hidden">
+							{{end}}
+						</div>
+					</details>
+					{{end}}
+					
+					<!-- Form Data -->
+					{{if $endpoint.Form}}
+					<details class="flex flex-col open:gap-4 rounded-md p-4 bg-slate-800/50">
+						<summary class="flex items-center justify-between">
+							<h4 class="text-base text-slate-50 font-medium">Form Data</h4>
+						</summary>
+						<div class="flex flex-col gap-4">
+							{{range $form := $endpoint.Form}}
+							<div class="flex flex-col gap-2">
+								<div class="flex items-center gap-2 text-sm font-mono">
+									<p class="py-1 px-2 bg-slate-700 rounded-md">{{$form.Name}}</p>
+									<p class="text-slate-50">{{$form.Type}}</p>
+									{{if $form.Required}}
+									<p class="text-rose-500">required</p>
+									{{end}}
+								</div>
+								{{if $form.Description}}
+								<p class="text-sm text-slate-400">{{$form.Description}}</p>
+								{{end}}
+								{{if $form.Example}}
+								<div class="text-xs font-mono">
+									<span class="text-slate-500">Example: </span>
+									<code class="text-cyan-400">{{$form.Example}}</code>
+								</div>
+								{{end}}
+							</div>
+							<hr class="border-none h-px bg-slate-700 opacity-50 last:hidden">
+							{{end}}
+						</div>
+					</details>
+					{{end}}
+					
+					<!-- Request Body -->
+					{{if $endpoint.Body}}
+					<details class="flex flex-col open:gap-4 rounded-md p-4 bg-slate-800/50">
+						<summary class="flex items-center justify-between">
+							<h4 class="text-base text-slate-50 font-medium">Request Body</h4>
+						</summary>
+						<div class="flex flex-col lg:flex-row gap-4">
+							<div class="flex flex-col gap-4 lg:w-1/2">
+								{{template "renderBodyFields" $endpoint.Body}}
+							</div>
+							<div class="lg:w-1/2">
+								<pre class="p-4 rounded-md bg-slate-900 h-fit text-slate-400 text-sm overflow-x-auto">{{/* JSON example would go here */}}{
+  "example": "request body"
+}</pre>
+							</div>
+						</div>
+					</details>
+					{{end}}
+					
+					<!-- Responses -->
+					{{if $endpoint.Responses}}
+					<details class="flex flex-col open:gap-4 rounded-md p-4 bg-slate-800/50">
+						<summary class="flex items-center justify-between">
+							<h4 class="text-base text-slate-50 font-medium">Responses</h4>
+						</summary>
+						<div class="flex flex-col gap-4">
+							{{range $response := $endpoint.Responses}}
+							<div class="flex flex-col gap-3 p-3 bg-slate-900/50 rounded-md">
+								<div class="flex items-center gap-3">
+									<span class="response-status" data-status="{{$response.StatusCode}}">{{$response.StatusCode}}</span>
+									<span class="text-slate-400 text-sm font-medium">{{$response.Description}}</span>
+									{{if $response.ContentType}}
+									<span class="text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded">{{$response.ContentType}}</span>
+									{{end}}
+								</div>
+								
+								{{if $response.Headers}}
+								<div class="flex flex-col gap-2">
+									<h5 class="text-sm font-medium text-slate-300">Response Headers</h5>
+									{{range $header := $response.Headers}}
+									<div class="flex items-center gap-2 text-sm">
+										<code class="text-cyan-400">{{$header.Name}}</code>
+										<span class="text-slate-400">{{$header.Type}}</span>
+										{{if $header.Description}}
+										<span class="text-slate-500">- {{$header.Description}}</span>
+										{{end}}
+									</div>
+									{{end}}
+								</div>
+								{{end}}
+								
+								{{if $response.Schema}}
+								<div class="flex flex-col gap-2">
+									<h5 class="text-sm font-normal text-slate-300">Response Schema</h5>
+									<div>
+										{{template "renderBodyFields" $response.Schema}}
+									</div>
+								</div>
+								{{end}}
+								
+								{{if $response.Examples}}
+								<div class="flex flex-col gap-2">
+									<h5 class="text-sm font-medium text-slate-300">Examples</h5>
+									{{range $example := $response.Examples}}
+									<div class="flex flex-col gap-1">
+										<div class="flex items-center gap-2">
+											<span class="text-sm font-medium text-slate-300">{{$example.Name}}</span>
+											{{if $example.Summary}}
+											<span class="text-xs text-slate-400">{{$example.Summary}}</span>
+											{{end}}
+										</div>
+										{{if $example.Description}}
+										<p class="text-xs text-slate-400">{{$example.Description}}</p>
+										{{end}}
+										<pre class="p-3 rounded bg-slate-900 text-xs text-slate-300 overflow-x-auto">{{$example.Value}}</pre>
+									</div>
+									{{end}}
+								</div>
+								{{end}}
+							</div>
+							{{end}}
+						</div>
+					</details>
+					{{end}}
+				</div>
+			</details>
+			{{end}}
+		</article>
+		{{end}}
+	</section>
+</main>
+{{end}}
+
+{{define "renderBodyFields"}}
+{{range $field := .}}
+<div class="flex flex-col gap-2 font-mono">
+	<div class="flex items-center gap-2 text-sm font-mono flex-wrap">
+		<p class="py-1 px-2 bg-slate-700 rounded-md">
+			{{if $field.JSONName}}{{$field.JSONName}}{{else}}{{$field.Name}}{{end}}
+		</p>
+		<p class="text-slate-50">{{$field.Type}}</p>
+		{{if $field.Required}}
+		<p class="text-rose-500">required</p>
+		{{end}}
+		{{if $field.Default}}
+		<p class="text-slate-400">default: {{$field.Default}}</p>
+		{{end}}
+	</div>
+	
+	{{if ne (len $field.Validation) 0}}
+	<div class="flex items-center gap-2 text-xs text-slate-400">
+		{{range $rule, $value := $field.Validation}}
+		<span>{{$rule}}: {{$value}}</span>
+		{{end}}
+	</div>
+	{{end}}
+	
+	{{if $field.Description}}
+	<p class="text-sm text-slate-400 font-sans">{{$field.Description}}</p>
+	{{end}}
+	
+	{{if $field.Example}}
+	<div class="text-xs">
+		<span class="text-slate-500">Example: </span>
+		<code class="text-cyan-400">{{$field.Example}}</code>
+	</div>
+	{{end}}
+	
+	{{if $field.Enum}}
+	<div class="text-xs">
+		<span class="text-slate-500">Allowed values: </span>
+		<span class="text-cyan-400">
+		{{range $i, $val := $field.Enum}}{{if $i}}, {{end}}<code>{{$val}}</code>{{end}}
+		</span>
+	</div>
+	{{end}}
+	
+	{{if ne (len $field.Fields) 0}}
+	<div class="flex flex-col pl-5 mt-2 border-l-2 border-slate-700">
+		{{template "renderBodyFields" $field.Fields}}
+	</div>
+	{{end}}
+</div>
+<hr class="border-none h-px my-4 bg-slate-600/50 last:hidden">
+{{end}}
+{{end}}
