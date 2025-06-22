@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"html/template"
 	"net/http"
-	"time"
 )
 
 //go:embed templates/*.html
@@ -21,290 +20,331 @@ func init() {
 	}
 }
 
-// NewDocumentation creates a new API documentation instance
-func NewDocumentation(info Info) *APIDocumentation {
-	return &APIDocumentation{
-		Info:      info,
-		Tags:      []*Tag{},
-		Security:  []Security{},
-		Servers:   []Server{},
-		CreatedAt: time.Now(),
-	}
-}
+type documentationOption func(*Documentation)
 
-// AddServer adds a server to the documentation
-func (docs *APIDocumentation) AddServer(url, description string, variables map[string]string) *APIDocumentation {
-	server := Server{
-		URL:         url,
-		Description: description,
-		Variables:   variables,
+func New(title, description, version string, options ...documentationOption) *Documentation {
+	docs := &Documentation{
+		Info: Info{
+			Title:   title,
+			Desc:    description,
+			Version: version,
+		},
 	}
-	docs.Servers = append(docs.Servers, server)
+
+	for _, opt := range options {
+		opt(docs)
+	}
+
 	return docs
 }
 
-// AddSecurity adds a security scheme to the documentation
-func (docs *APIDocumentation) AddSecurity(security Security) *APIDocumentation {
-	docs.Security = append(docs.Security, security)
-	return docs
-}
-
-// AddTag adds a new tag to the documentation
-func (docs *APIDocumentation) AddTag(name, description string) *Tag {
-	tag := &Tag{
-		Name:        name,
-		Description: description,
-		Endpoints:   []Endpoint{},
-	}
-	docs.Tags = append(docs.Tags, tag)
-	return tag
-}
-
-// GetTag retrieves an existing tag by name or creates a new one
-func (docs *APIDocumentation) GetTag(name string) *Tag {
-	for _, tag := range docs.Tags {
-		if tag.Name == name {
-			return tag
+func WithContact(name, email, url string) documentationOption {
+	return func(d *Documentation) {
+		d.Info.Contact = Contact{
+			Name:  name,
+			Email: email,
+			URL:   url,
 		}
 	}
-	return docs.AddTag(name, "")
 }
 
-// EndpointOption represents a function option for configuring endpoints
-type EndpointOption func(e *Endpoint)
-
-// AddEndpoint adds a new endpoint to the tag
-func (tag *Tag) AddEndpoint(method Method, path, summary string, opts ...EndpointOption) *Endpoint {
-	endpoint := &Endpoint{
-		Path:      path,
-		Summary:   summary,
-		Method:    method,
-		Query:     []QueryParam{},
-		Headers:   []Header{},
-		Form:      []FormField{},
-		Body:      []BodyField{},
-		Responses: []Response{},
-	}
-
-	for _, opt := range opts {
-		opt(endpoint)
-	}
-
-	tag.Endpoints = append(tag.Endpoints, *endpoint)
-	return endpoint
-}
-
-// Endpoint configuration options
-func WithDescription(description string) EndpointOption {
-	return func(e *Endpoint) {
-		e.Description = description
-	}
-}
-
-func WithOperationID(operationID string) EndpointOption {
-	return func(e *Endpoint) {
-		e.OperationID = operationID
-	}
-}
-
-func WithBody(data any) EndpointOption {
-	return func(e *Endpoint) {
-		e.Body = structToSlice(data)
-	}
-}
-
-func WithDeprecated(deprecated bool) EndpointOption {
-	return func(e *Endpoint) {
-		e.Deprecated = deprecated
-	}
-}
-
-func WithSecurity(securityNames ...string) EndpointOption {
-	return func(e *Endpoint) {
-		e.Security = securityNames
-	}
-}
-
-func WithTags(tags ...string) EndpointOption {
-	return func(e *Endpoint) {
-		e.Tags = tags
-	}
-}
-
-// Query parameter options
-type ParamOption func(q *QueryParam)
-
-func WithRequired(required bool) ParamOption {
-	return func(q *QueryParam) {
-		q.Validation.Required = required
-	}
-}
-
-func WithDefault(defaultValue any) ParamOption {
-	return func(q *QueryParam) {
-		q.Validation.Default = defaultValue
-	}
-}
-
-func WithMin(min int) ParamOption {
-	return func(q *QueryParam) {
-		q.Validation.Min = min
-	}
-}
-
-func WithMax(max int) ParamOption {
-	return func(q *QueryParam) {
-		q.Validation.Max = max
-	}
-}
-
-func WithMinLength(minLen int) ParamOption {
-	return func(q *QueryParam) {
-		q.Validation.MinLen = minLen
-	}
-}
-
-func WithMaxLength(maxLen int) ParamOption {
-	return func(q *QueryParam) {
-		q.Validation.MaxLen = maxLen
-	}
-}
-
-func WithPattern(pattern string) ParamOption {
-	return func(q *QueryParam) {
-		q.Validation.Pattern = pattern
-	}
-}
-
-func WithParamExample(example any) ParamOption {
-	return func(q *QueryParam) {
-		q.Example = example
-	}
-}
-
-func WithEnum(values ...any) ParamOption {
-	return func(q *QueryParam) {
-		q.Enum = values
-	}
-}
-
-func WithQuery(name, typ, description string, opts ...ParamOption) EndpointOption {
-	return func(e *Endpoint) {
-		query := QueryParam{
-			Name:        name,
-			Type:        typ,
-			Description: description,
+func WithLicense(name, url string) documentationOption {
+	return func(d *Documentation) {
+		d.Info.License = License{
+			Name: name,
+			URL:  url,
 		}
-		for _, opt := range opts {
-			opt(&query)
-		}
-		e.Query = append(e.Query, query)
 	}
 }
 
-// Header configuration
-func WithHeader(name, typ, description string, required bool, example string) EndpointOption {
-	return func(e *Endpoint) {
-		header := Header{
-			Name:        name,
-			Type:        typ,
-			Description: description,
-			Required:    required,
-			Example:     example,
-		}
-		e.Headers = append(e.Headers, header)
+func WithTerms(terms string) documentationOption {
+	return func(d *Documentation) {
+		d.Info.Terms = terms
 	}
 }
 
-// Form field configuration
-func WithFormField(name, typ, description string, required bool, example any) EndpointOption {
-	return func(e *Endpoint) {
-		field := FormField{
-			Name:        name,
-			Type:        typ,
-			Description: description,
-			Required:    required,
-			Example:     example,
-		}
-		e.Form = append(e.Form, field)
+func (d *Documentation) AddServer(url, description string) *Documentation {
+	d.Servers = append(d.Servers, Server{url, description})
+	return d
+}
+
+func (d *Documentation) AddSecurity(security SecurityScheme) *Documentation {
+	d.Security = append(d.Security, security)
+	return d
+}
+
+func BearerToken(name, description string) SecurityScheme {
+	return SecurityScheme{
+		Name:    name,
+		Desc:    description,
+		KeyName: "Authorization",
+		Type:    BearerType,
+		In:      Headers,
 	}
 }
 
-// Response configuration
-func WithResponse(statusCode int, description string, schema any, examples ...Example) EndpointOption {
-	return func(e *Endpoint) {
-		response := Response{
-			StatusCode:  statusCode,
-			Description: description,
-			Examples:    examples,
-		}
-		if schema != nil {
-			response.Schema = structToSlice(schema)
-		}
-		e.Responses = append(e.Responses, response)
+func ApiKey(name, description, keyname string, in securityLocation) SecurityScheme {
+	return SecurityScheme{
+		Name:    name,
+		Desc:    description,
+		KeyName: keyname,
+		Type:    ApiKeyType,
+		In:      in,
 	}
 }
 
-// Serve renders the documentation as HTML
-func (d *APIDocumentation) Serve(w http.ResponseWriter, r *http.Request) {
+func Basic(name, description string) SecurityScheme {
+	return SecurityScheme{
+		Name:    name,
+		Desc:    description,
+		KeyName: "Authorization",
+		Type:    BasicType,
+		In:      Headers,
+	}
+}
+
+func NewSecurityScheme(name, description, keyname string, typ securityType, in securityLocation) SecurityScheme {
+	return SecurityScheme{
+		Name:    name,
+		Desc:    description,
+		KeyName: keyname,
+		Type:    typ,
+		In:      in,
+	}
+}
+
+func (d *Documentation) AddResource(name, description string) *Resource {
+	resource := Resource{
+		Name:      name,
+		Desc:      description,
+		Endpoints: make([]Endpoint, 0),
+	}
+	d.Resources = append(d.Resources, resource)
+	return &d.Resources[len(d.Resources)-1]
+}
+
+func (r *Resource) Post(path, summary, description string) *Endpoint {
+	endpoint := Endpoint{
+		Method:  POST,
+		Path:    path,
+		Summary: summary,
+		Desc:    description,
+	}
+	r.Endpoints = append(r.Endpoints, endpoint)
+	return &r.Endpoints[len(r.Endpoints)-1]
+}
+
+func (r *Resource) Get(path, summary, description string) *Endpoint {
+	endpoint := Endpoint{
+		Method:  GET,
+		Path:    path,
+		Summary: summary,
+		Desc:    description,
+	}
+	r.Endpoints = append(r.Endpoints, endpoint)
+	return &r.Endpoints[len(r.Endpoints)-1]
+}
+
+func (r *Resource) Put(path, summary, description string) *Endpoint {
+	endpoint := Endpoint{
+		Method:  PUT,
+		Path:    path,
+		Summary: summary,
+		Desc:    description,
+	}
+	r.Endpoints = append(r.Endpoints, endpoint)
+	return &r.Endpoints[len(r.Endpoints)-1]
+}
+
+func (r *Resource) Delete(path, summary, description string) *Endpoint {
+	endpoint := Endpoint{
+		Method:  DELETE,
+		Path:    path,
+		Summary: summary,
+		Desc:    description,
+	}
+	r.Endpoints = append(r.Endpoints, endpoint)
+	return &r.Endpoints[len(r.Endpoints)-1]
+}
+
+func (r *Resource) Patch(path, summary, description string) *Endpoint {
+	endpoint := Endpoint{
+		Method:  PATCH,
+		Path:    path,
+		Summary: summary,
+		Desc:    description,
+	}
+	r.Endpoints = append(r.Endpoints, endpoint)
+	return &r.Endpoints[len(r.Endpoints)-1]
+}
+
+func (r *Resource) Options(path, summary, description string) *Endpoint {
+	endpoint := Endpoint{
+		Method:  OPTIONS,
+		Path:    path,
+		Summary: summary,
+		Desc:    description,
+	}
+	r.Endpoints = append(r.Endpoints, endpoint)
+	return &r.Endpoints[len(r.Endpoints)-1]
+}
+
+func (e *Endpoint) Security(names ...string) *Endpoint {
+	e.Securities = append(e.Securities, names...)
+	return e
+}
+
+func (e *Endpoint) PathParams(params ...*PathParameter) *Endpoint {
+	e.Parameters.Path = append(e.Parameters.Path, params...)
+	return e
+}
+
+func (e *Endpoint) Queries(queries ...*QueryParameter) *Endpoint {
+	e.Parameters.Query = append(e.Parameters.Query, queries...)
+	return e
+}
+
+func (e *Endpoint) Headers(headers ...*HeaderParameter) *Endpoint {
+	e.Parameters.Header = append(e.Parameters.Header, headers...)
+	return e
+}
+
+func (e *Endpoint) Body(body *Request) *Endpoint {
+	e.Request = body
+	return e
+}
+
+func (e *Endpoint) Response(response *Response) *Endpoint {
+	e.Responses = append(e.Responses, *response)
+	return e
+}
+
+func PathParam(name, description string) *PathParameter {
+	return &PathParameter{
+		Name: name,
+		Type: "string", // TODO: make type and inclide in function parameters
+		Desc: description,
+		Req:  true,
+		Ex:   nil,
+	}
+}
+
+func (p *PathParameter) Example(v any) *PathParameter {
+	p.Ex = v
+	return p
+}
+
+func QueryParam(name, description string) *QueryParameter {
+	return &QueryParameter{
+		Name: name,
+		Type: "string", // TODO: make type and inclide in function parameters
+		Desc: description,
+		Req:  false,
+		Ex:   nil,
+	}
+}
+
+func (p *QueryParameter) Required() *QueryParameter {
+	p.Req = true
+	return p
+}
+
+func (p *QueryParameter) Example(v any) *QueryParameter {
+	p.Ex = v
+	return p
+}
+
+func (p *QueryParameter) Enum(v ...any) *QueryParameter {
+	p.Enums = append(p.Enums, v...)
+	return p
+}
+
+func (p *QueryParameter) Min(min float64) *QueryParameter {
+	p.Minimum = &min
+	return p
+}
+
+func (p *QueryParameter) Max(max float64) *QueryParameter {
+	p.Maximum = &max
+	return p
+}
+
+func (p *QueryParameter) MinLength(min int) *QueryParameter {
+	p.MinLen = &min
+	return p
+}
+
+func (p *QueryParameter) MaxLength(max int) *QueryParameter {
+	p.MaxLen = &max
+	return p
+}
+
+func HeaderParam(key, description string) *HeaderParameter {
+	return &HeaderParameter{
+		Name: key,
+		Type: "string", // TODO: make type and inclide in function parameters
+		Desc: description,
+		Req:  false,
+		Ex:   nil,
+	}
+}
+
+func (p *HeaderParameter) Required() *HeaderParameter {
+	p.Req = true
+	return p
+}
+
+func (p *HeaderParameter) Example(v any) *HeaderParameter {
+	p.Ex = v
+	return p
+}
+
+func JSONBody(v any) *Request {
+	return &Request{
+		ContentType: ContentTypeJSON,
+		Fields:      parseStruct(v),
+		Ex:          nil,
+	}
+}
+
+func (b *Request) Example(v any) *Request {
+	jsonBytes, _ := json.Marshal(v)
+	b.Ex = v
+	b.JSON = string(jsonBytes)
+	return b
+}
+
+func JSONResponse(statusCode int, v any) *Response {
+	statusMessage, ok := statusCodeMessages[statusCode]
+	if !ok {
+		statusMessage = ""
+	}
+	response := &Response{
+		StatusCode:  statusCode,
+		Desc:        statusMessage,
+		ContentType: ContentTypeJSON,
+		Fields:      parseStruct(v),
+		Ex:          nil,
+	}
+	return response
+}
+
+func (r *Response) Description(description string) *Response {
+	r.Desc = description
+	return r
+}
+
+func (r *Response) Example(v any) *Response {
+	jsonBytes, _ := json.Marshal(v)
+	r.Ex = v
+	r.JSON = string(jsonBytes)
+	return r
+}
+
+func (d *Documentation) Serve(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := tmpl.ExecuteTemplate(w, "base.html", d); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	}
-}
-
-// ServeJSON serves the documentation as JSON
-func (d *APIDocumentation) ServeJSON(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(d); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-// Export returns the documentation as JSON bytes
-func (d *APIDocumentation) Export() ([]byte, error) {
-	return json.MarshalIndent(d, "", "  ")
-}
-
-// Security scheme helpers
-func NewAPIKeySecurity(name, keyName, description string, in SecurityLocation) Security {
-	return Security{
-		Type:        SecurityTypeAPIKey,
-		Name:        name,
-		In:          in,
-		Description: description,
-		KeyName:     keyName,
-	}
-}
-
-func NewBearerSecurity(name, description string) Security {
-	return Security{
-		Type:        SecurityTypeBearer,
-		Name:        name,
-		Scheme:      "bearer",
-		In:          SecurityLocationHeader,
-		Description: description,
-	}
-}
-
-func NewBasicSecurity(name, description string) Security {
-	return Security{
-		Type:        SecurityTypeBasic,
-		Name:        name,
-		In:          SecurityLocationHeader,
-		Scheme:      "basic",
-		Description: description,
-	}
-}
-
-// Helper for creating examples
-func NewExample(name, summary, description string, value any) Example {
-	return Example{
-		Name:        name,
-		Summary:     summary,
-		Description: description,
-		Value:       value,
 	}
 }

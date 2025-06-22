@@ -1,10 +1,11 @@
 {{define "sidebar"}}
-<aside class="sticky top-0 border border-r-solid border-slate-600/50 overflow-y-auto bg-slate-800 h-screen flex flex-col gap-4">
+<aside
+	class="sticky top-0 border border-r-solid border-slate-600/50 overflow-y-auto bg-slate-800 h-screen flex flex-col gap-4">
 	<h2 class="text-sm font-medium text-slate-50 border border-b-solid border-slate-600/50 h-12 flex items-center px-4">
 		Endpoints
 	</h2>
-	
-	<!-- Servers Section -->
+
+	<!-- servers -->
 	{{if .Servers}}
 	<div class="px-4">
 		<h3 class="text-sm font-medium mb-2">Servers</h3>
@@ -12,31 +13,32 @@
 			{{range $server := .Servers}}
 			<div class="text-xs text-slate-300">
 				<div class="font-mono text-cyan-400">{{$server.URL}}</div>
-				{{if $server.Description}}
-				<div class="text-slate-400">{{$server.Description}}</div>
+				{{if $server.Desc}}
+				<div class="text-slate-400">{{$server.Desc}}</div>
 				{{end}}
 			</div>
 			{{end}}
 		</div>
 	</div>
 	{{end}}
-	
-	<!-- Tags/Endpoints Section -->
+
+	<!-- resources/endpoints -->
 	<section class="flex flex-col gap-2">
-		{{range $tag := .Tags}}
+		{{range $resource := .Resources}}
 		<details class="space-y-2" open>
 			<summary class="flex justify-between px-4 text-sm font-medium text-slate-50 cursor-pointer">
-				{{$tag.Name}}
+				{{$resource.Name}}
 			</summary>
 			<ul class="list-none px-2">
-				{{range $endpoint := $tag.Endpoints}}
+				{{range $endpoint := $resource.Endpoints}}
 				<li class="mb-1">
 					<a class="flex items-center justify-between text-slate-50 p-2 rounded-md transition-all hover:bg-slate-900 no-underline"
-						href="#{{$endpoint.OperationID}}{{if not $endpoint.OperationID}}{{$endpoint.Summary}}{{end}}">
+						href="#{{$endpoint.Summary}}">
 						<div class="flex flex-col gap-1 flex-1 min-w-0">
 							<p class="text-sm text-slate-400 truncate">{{$endpoint.Summary}}</p>
 						</div>
-						<span class="text-sm font-medium ml-2" data-method="{{$endpoint.Method}}">{{$endpoint.Method}}</span>
+						<span class="text-sm font-medium ml-2"
+							data-method="{{$endpoint.Method}}">{{$endpoint.Method}}</span>
 					</a>
 				</li>
 				{{end}}
