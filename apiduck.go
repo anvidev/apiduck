@@ -348,3 +348,9 @@ func (d *Documentation) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func Ptr[T any](v T) *T {
+	p := new(T)
+	*p = v
+	return p
+}
