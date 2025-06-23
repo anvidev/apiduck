@@ -8,14 +8,19 @@ import (
 )
 
 type DummyBody struct {
-	Name     string `json:"name" validate:"min=3,required"`
-	Email    string `json:"email" validate:"email,required"`
-	Password string `json:"password" validate:"min=8,max=32,required"`
-	Nested   Nested `json:"nested" apiduck:"desc=this is a test"`
+	Name     string   `json:"name" validate:"min=3,required"`
+	Email    string   `json:"email" validate:"email,required"`
+	Password string   `json:"password" validate:"min=8,max=32,required"`
+	Nested   []Nested `json:"nested" apiduck:"desc=this is a test"`
 }
 
 type Nested struct {
-	Testing string `json:"testing"`
+	Testing string       `json:"testing"`
+	Deep    DeeplyNested `json:"deeplyNested"`
+}
+
+type DeeplyNested struct {
+	Deep int64 `json:"deep"`
 }
 
 func main() {
@@ -73,6 +78,7 @@ func main() {
 					Name:     "John Doe",
 					Email:    "john@doe.com",
 					Password: "pa$$w0rd",
+					Nested:   []Nested{},
 				}),
 		).
 		Response(
@@ -81,6 +87,14 @@ func main() {
 					Name:     "John Doe",
 					Email:    "john@doe.com",
 					Password: "pa$$w0rd",
+					Nested: []Nested{
+						{
+							Testing: "",
+							Deep: DeeplyNested{
+								Deep: 0,
+							},
+						},
+					},
 				}),
 		).
 		Response(

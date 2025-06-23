@@ -5,23 +5,6 @@ import (
 	"strings"
 )
 
-/*
-	type field struct {
-		fields []field
-
-		name         string
-		description  string
-		typ          string
-		defaultValue any
-
-		example any
-
-		required     bool
-		enum      []any
-		minimum   *float64
-		maximum   *float64
-	}
-*/
 func parseStruct(v any) []Field {
 	fields := []Field{}
 
@@ -58,13 +41,15 @@ func parseStruct(v any) []Field {
 			Type: fieldType,
 		}
 
-		if reflectField.Kind() == reflect.Struct {
-			field.Fields = parseStruct(reflectField.Interface())
-
-		}
-
 		parseValidationRules(&field, validateTag)
 		parseApiduckTag(&field, apiduckTag)
+
+		if reflectField.Kind() == reflect.Struct || (reflectField.Kind() == reflect.Pointer && reflectField.Elem().Kind() == reflect.Struct) {
+			field.Fields = parseStruct(reflectField.Interface())
+		} else if reflectField.Kind() == reflect.Slice {
+			field.Type = "[]" + fieldType
+			field.Fields = parseStruct(reflect.New(reflectField.Type().Elem()).Interface())
+		}
 
 		fields = append(fields, field)
 	}
