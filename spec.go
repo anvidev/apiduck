@@ -161,3 +161,5 @@ type Field struct {
 	Minimum *string
 	Maximum *string
 }
+
+type M map[string]any
